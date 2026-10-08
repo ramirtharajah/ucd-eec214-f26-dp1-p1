@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="Rajeevan Amirtharajah Dept. of Electrical and Computer Engineering University of California, Davis" />
+  <title>EEC 214 Fall 2026 Project #1 Part 1: Linear Regulator Design</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title"><strong><u>EEC 214 Fall 2026 Project #1 Part
+1:</u></strong><br />
+<strong>Linear Regulator Design</strong></h1>
+<p class="author">Rajeevan Amirtharajah<br />
+Dept. of Electrical and Computer Engineering<br />
+University of California, Davis</p>
+<p class="date">Issued: October 8, 2026<br />
+Due: October 23, 2026, 11:59 PM via Canvas.</p>
+</header>
+<p><span><strong>Reference:</strong></span> Gray, Hurst, Lewis,
+Meyer <span class="citation" data-cites="graymeyer-book4"></span>. Any
+edition is fine.</p>
+<p><span><strong>NMOS Transistor Parameters:</strong></span> The
+following device parameters may be helpful for any analytical design in
+this assignment:</p>
+<ul>
+<li><p>Threshold Voltage
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>V</mi><mrow><mi>T</mi><mi>N</mi></mrow></msub><mo>=</mo><mn>349.7</mn></mrow><annotation encoding="application/x-tex">V_{TN} = 349.7</annotation></semantics></math>
+mV</p></li>
+<li><p>Min.
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>W</mi><mo>=</mo><mn>270</mn></mrow><annotation encoding="application/x-tex">W = 270</annotation></semantics></math>
+nm</p></li>
+<li><p>Min.
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>L</mi><mo>=</mo><mn>180</mn></mrow><annotation encoding="application/x-tex">L = 180</annotation></semantics></math>
+nm</p></li>
+<li><p>Process Transconductance
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>μ</mi><msub><mi>C</mi><mrow><mi>o</mi><mi>x</mi></mrow></msub><mo>=</mo><mn>104.7</mn><mi>μ</mi></mrow><annotation encoding="application/x-tex">\mu C_{ox} = 104.7 \mu</annotation></semantics></math>A/V<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi></mi><mn>2</mn></msup><annotation encoding="application/x-tex">^{2}</annotation></semantics></math></p></li>
+<li><p>Body Effect Parameter
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>γ</mi><mo>=</mo><mn>0.297</mn></mrow><annotation encoding="application/x-tex">\gamma = 0.297</annotation></semantics></math>
+V/V<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi></mi><mrow><mn>1</mn><mi>/</mi><mn>2</mn></mrow></msup><annotation encoding="application/x-tex">^{1/2}</annotation></semantics></math></p></li>
+<li><p>Channel Length Modulation Parameter
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>λ</mi><mo>=</mo><mn>0.115</mn></mrow><annotation encoding="application/x-tex">\lambda = 0.115</annotation></semantics></math>
+V<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi></mi><mrow><mi>−</mi><mn>1</mn></mrow></msup><annotation encoding="application/x-tex">^{-1}</annotation></semantics></math></p></li>
+<li><p>Gate Oxide Capacitance
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>C</mi><mrow><mi>o</mi><mi>x</mi></mrow></msub><mo>=</mo><mn>10</mn></mrow><annotation encoding="application/x-tex">C_{ox} = 10</annotation></semantics></math>
+fF/<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>μ</mi><annotation encoding="application/x-tex">\mu</annotation></semantics></math>m<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi></mi><mn>2</mn></msup><annotation encoding="application/x-tex">^{2}</annotation></semantics></math></p></li>
+<li><p>Fermi Level
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">|</mo><mn>2</mn><msub><mi>ϕ</mi><mi>F</mi></msub><mo stretchy="false" form="prefix">|</mo><mo>=</mo><mn>0.6</mn></mrow><annotation encoding="application/x-tex">|2\phi_{F}| = 0.6</annotation></semantics></math>
+V</p></li>
+</ul>
+<p>Note that the values above are derived from the Predictive Technology
+Model <span class="citation" data-cites="ptm-web zhao-ptm-ted06"></span>
+180 nm CMOS bulk process used with the Cadence Virtuoso Analog Design
+Environment (ADE) tool. Similar values may be used for circuit analysis
+with the 180 nm CMOS models (<span><code>TSMC180nmN</code></span> and
+<span><code>TSMC180nmP</code></span>) in the OrCAD PSpice library. These
+values are approximate and the parameters do not include significant
+deep submicron deviations from the classical model such as mobility
+saturation. Expect significant differences between your calculated
+values and simulated results.</p>
+<h4 id="simulation">Simulation</h4>
+<p>This design project is distributed as an OrCAD project, therefore
+OrCAD PSpice running locally on your machine is the only option that is
+officially supported. Other options (PSpice run remotely, LTSpice run
+locally) are possible but are not supported. Please contact the
+instructor if you have any questions regarding simulation options.
+Tutorials for OrCAD PSpice are available on the course Canvas site or <a
+href="https://ucdavis.box.com/s/umur63w6171639cjh6a1mzocqdcahrko">here</a>.</p>
+<p>[ps2ans1]</p>
+<h1 id="nmos-source-follower-linear-regulator">NMOS Source Follower
+Linear Regulator</h1>
+<figure id="fig:linReg" data-latex-placement="htp">
+<div class="center">
+<p><img src="./LDOsrcFllwrFeedback.png" style="width:75.0%"
+alt="Linear regulator with opamp and NMOS source follower output stage and voltage divider feedback network schematic." /></p>
+</div>
+<figcaption>NMOS source follower linear regulator.</figcaption>
+</figure>
+<p>Consider the NMOS source-follower linear regulator shown in Figure <a
+href="#fig:linReg" data-reference-type="ref"
+data-reference="fig:linReg">1</a>. The objective of this design project
+is to choose appropriate values for
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>W</mi><annotation encoding="application/x-tex">W</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>L</mi><annotation encoding="application/x-tex">L</annotation></semantics></math>
+of the NMOS power FET, resistors
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mn>0</mn></msub><annotation encoding="application/x-tex">R_{0}</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mn>1</mn></msub><annotation encoding="application/x-tex">R_{1}</annotation></semantics></math>,
+bypass capacitance
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>C</mi><mtext mathvariant="normal">BYP</mtext></msub><annotation encoding="application/x-tex">C_{\textrm{BYP}}</annotation></semantics></math>,
+and the gain and bandwidth of the near-ideal op amp. You may use a
+combination of hand analysis, numerical analysis, and simulation to
+choose your component values, but you must satisfy the following
+specifications and verify performance of the circuit in simulation. You
+will also turn in a concise typed/digital report discussing your design
+choices, the simulation results, and explaining any discrepancies
+between specifications, predicted performance, and simulated
+performance.</p>
+<p>You must specify your design in part by choosing values for the
+following transistor parameters (and only these parameters, e.g. you
+cannot change the transistor threshold voltage):</p>
+<ul>
+<li><p><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>L</mi><mrow><mi>n</mi><mi>U</mi><mi>n</mi><mi>i</mi><mi>t</mi></mrow></msub><annotation encoding="application/x-tex">L_{nUnit}</annotation></semantics></math>:
+The channel length of your NMOS unit devices (must be an integer
+multiple of the SCMOS process feature size parameter
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>λ</mi><mo>=</mo><mn>90</mn></mrow><annotation encoding="application/x-tex">\lambda = 90</annotation></semantics></math>
+nm).</p></li>
+<li><p><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>W</mi><mrow><mi>n</mi><mi>U</mi><mi>n</mi><mi>i</mi><mi>t</mi></mrow></msub><annotation encoding="application/x-tex">W_{nUnit}</annotation></semantics></math>:
+The width of your NMOS unit devices (must be an integer multiple of the
+SCMOS process feature size parameter
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>λ</mi><mo>=</mo><mn>90</mn></mrow><annotation encoding="application/x-tex">\lambda = 90</annotation></semantics></math>
+nm).</p></li>
+<li><p><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>M</mi><annotation encoding="application/x-tex">M</annotation></semantics></math>:
+The number of unit devices in parallel for transistor M1.
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>M</mi><annotation encoding="application/x-tex">M</annotation></semantics></math>
+must be an integer.</p></li>
+</ul>
+<p>The linear regulator should be designed to satisfy the following
+specifications:</p>
+<ul>
+<li><p>Nominal Input Voltage
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>V</mi><mrow><mi>I</mi><mi>N</mi></mrow></msub><mo>=</mo><mn>1.8</mn></mrow><annotation encoding="application/x-tex">V_{IN} = 1.8</annotation></semantics></math>
+V</p></li>
+<li><p>Input Voltage Range
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>V</mi><mrow><mi>I</mi><mi>N</mi></mrow></msub><mo>=</mo><mn>1.7</mn><mo>−</mo><mn>2.0</mn></mrow><annotation encoding="application/x-tex">V_{IN} = 1.7 - 2.0</annotation></semantics></math>
+V</p></li>
+<li><p>Line Regulation (DC)
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>&lt;</mo><mn>20</mn></mrow><annotation encoding="application/x-tex">&lt; 20</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>μ</mi><annotation encoding="application/x-tex">\mu</annotation></semantics></math>V/V</p></li>
+<li><p>Line Regulation (transient)
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>&lt;</mo><mi>±</mi><mn>2</mn></mrow><annotation encoding="application/x-tex">&lt; \pm2</annotation></semantics></math>
+mV</p></li>
+<li><p>Line Step Settling Time (within
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>±</mi><mn>5</mn></mrow><annotation encoding="application/x-tex">\pm5</annotation></semantics></math>%
+of steady-state output)
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>&lt;</mo><mn>200</mn></mrow><annotation encoding="application/x-tex">&lt; 200</annotation></semantics></math>
+ns</p></li>
+<li><p>Power Supply Rejection Ratio (PSRR at 100 Hz)
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>&lt;</mo><mi>−</mi><mn>90</mn></mrow><annotation encoding="application/x-tex">&lt; -90</annotation></semantics></math>
+dB</p></li>
+<li><p>Power Supply Rejection Ratio (PSRR at 100 MHz)
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>&lt;</mo><mi>−</mi><mn>10</mn></mrow><annotation encoding="application/x-tex">&lt; -10</annotation></semantics></math>
+dB</p></li>
+<li><p>Reference Voltage
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>V</mi><mrow><mi>R</mi><mi>E</mi><mi>F</mi></mrow></msub><mo>=</mo><mn>631</mn></mrow><annotation encoding="application/x-tex">V_{REF} = 631</annotation></semantics></math>
+mV
+(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mfrac><mn>1</mn><mn>2</mn></mfrac><annotation encoding="application/x-tex">\frac{1}{2}</annotation></semantics></math>
+Si bandgap)</p></li>
+<li><p>Nominal Output Voltage
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>V</mi><mrow><mi>O</mi><mi>U</mi><mi>T</mi></mrow></msub><mo>=</mo><mn>1.0</mn></mrow><annotation encoding="application/x-tex">V_{OUT} = 1.0</annotation></semantics></math>
+V</p></li>
+<li><p>Max Output Voltage Error (DC)
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>±</mi><mn>0.15</mn></mrow><annotation encoding="application/x-tex">\pm0.15</annotation></semantics></math>%</p></li>
+<li><p>Max Load Current
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>I</mi><mrow><mi>L</mi><mi>D</mi></mrow></msub><mo>=</mo><mn>10</mn></mrow><annotation encoding="application/x-tex">I_{LD} = 10</annotation></semantics></math>
+mA</p></li>
+<li><p>Nominal Load Current
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>I</mi><mrow><mi>L</mi><mi>D</mi></mrow></msub><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">I_{LD} = 1</annotation></semantics></math>
+mA</p></li>
+<li><p>Min Load Current
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>I</mi><mrow><mi>L</mi><mi>D</mi></mrow></msub><mo>=</mo><mn>1</mn><mspace width="0.222em"></mspace><mi>μ</mi></mrow><annotation encoding="application/x-tex">I_{LD} = 1\ \mu</annotation></semantics></math>A</p></li>
+<li><p>Load Regulation (DC)
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>&lt;</mo><mn>20</mn></mrow><annotation encoding="application/x-tex">&lt; 20</annotation></semantics></math>
+mV/A</p></li>
+<li><p>Load Regulation (transient)
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>&lt;</mo><mi>±</mi><mn>100</mn></mrow><annotation encoding="application/x-tex">&lt; \pm100</annotation></semantics></math>
+mV</p></li>
+<li><p>Load Step Settling Time (within
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>±</mi><mn>5</mn></mrow><annotation encoding="application/x-tex">\pm5</annotation></semantics></math>%
+of steady-state output)
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>&lt;</mo><mn>200</mn></mrow><annotation encoding="application/x-tex">&lt; 200</annotation></semantics></math>
+ns</p></li>
+<li><p>Load Rejection Ratio (LRR at 100 Hz)
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>&lt;</mo><mi>−</mi><mn>45</mn></mrow><annotation encoding="application/x-tex">&lt; -45</annotation></semantics></math>
+dB</p></li>
+<li><p>Operating Temperature 0 - 85
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi></mi><mo>∘</mo></msup><annotation encoding="application/x-tex">^{\circ}</annotation></semantics></math>C</p></li>
+<li><p>Output Voltage Temperature Coefficient
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>≤</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\leq 1</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>μ</mi><annotation encoding="application/x-tex">\mu</annotation></semantics></math>V/<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi></mi><mo>∘</mo></msup><annotation encoding="application/x-tex">^{\circ}</annotation></semantics></math>C</p></li>
+<li><p>Quiescent Current
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>I</mi><mi>Q</mi></msub><mo>≤</mo><mn>25</mn></mrow><annotation encoding="application/x-tex">I_{Q} \leq 25</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>μ</mi><annotation encoding="application/x-tex">\mu</annotation></semantics></math>A</p></li>
+<li><p>Max Bypass Capacitance
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>C</mi><mtext mathvariant="normal">BYP</mtext></msub><mo>≤</mo><mn>2</mn></mrow><annotation encoding="application/x-tex">C_{\textrm{BYP}} \leq 2</annotation></semantics></math>
+pF</p></li>
+</ul>
+<figure id="fig:opampModel" data-latex-placement="htp">
+<div class="center">
+<p><img src="./opampModel.png" style="width:75.0%"
+alt="Opamp equivalent circuit with input resistances Ri to ground and transconductance Gm, output resistance Ro, and output capacitance Co." /></p>
+</div>
+<figcaption>Simple opamp model.</figcaption>
+</figure>
+<p>The operational amplifier should be modeled using the equivalent
+circuit shown in Figure <a href="#fig:opampModel"
+data-reference-type="ref" data-reference="fig:opampModel">2</a>. You may
+choose the values of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>G</mi><mi>m</mi></msub><annotation encoding="application/x-tex">G_{m}</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mi>o</mi></msub><annotation encoding="application/x-tex">R_{o}</annotation></semantics></math>,
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>C</mi><mi>o</mi></msub><annotation encoding="application/x-tex">C_{o}</annotation></semantics></math>
+to satisfy the linear regulator specs but must also stay within the
+following constraints:</p>
+<ul>
+<li><p>Min Op Amp Output Voltage
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>v</mi><mi>o</mi></msub><mo>=</mo><mn>0.1</mn></mrow><annotation encoding="application/x-tex">v_{o} = 0.1</annotation></semantics></math>
+V</p></li>
+<li><p>Max Op Amp Output Voltage
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>v</mi><mi>o</mi></msub><mo>=</mo><msub><mi>V</mi><mrow><mi>I</mi><mi>N</mi></mrow></msub><mo>−</mo><mn>0.1</mn></mrow><annotation encoding="application/x-tex">v_{o} = V_{IN} - 0.1</annotation></semantics></math>
+V</p></li>
+<li><p>Gain-Bandwidth Product
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>≤</mo><msup><mn>10</mn><mn>8</mn></msup></mrow><annotation encoding="application/x-tex">\leq 10^{8}</annotation></semantics></math>
+Hz</p></li>
+<li><p>Input Impedance
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>R</mi><mrow><mi>I</mi><mi>N</mi></mrow></msub><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">R_{IN} = 1</annotation></semantics></math>
+G<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi mathvariant="normal">Ω</mi><annotation encoding="application/x-tex">\Omega</annotation></semantics></math></p></li>
+</ul>
+<p>Implement your design using OrCAD schematic capture and verify it
+using simulation using the same library and device models used in the
+OrCAD PSpice tutorials. Use the voltage-controlled current source
+(<span><code> vccs</code></span>) circuit element to implement the
+transconductor in the opamp model.</p>
+<h2 id="sec:design">Design</h2>
+<p>Download the ZIP archive of the design project: <a
+href="https://ucdavis.box.com/s/0teghem870uoc846op07gq3q6o64rkl9">DP1.zip</a>.
+Unzip the archive in the directory where you would like to edit and
+simulate the project. Open the project using OrCAD. You should see a
+schematic similar to the one below with the same default values for the
+design parameters filled in. The schematic is set up to automatically
+calculate transistor source/drain areas and perimeters. Complete the
+project by editing all the parameters such as
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>W</mi><mrow><mi>n</mi><mi>U</mi><mi>n</mi><mi>i</mi><mi>t</mi></mrow></msub><annotation encoding="application/x-tex">W_{nUnit}</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>M</mi><annotation encoding="application/x-tex">M</annotation></semantics></math>,
+etc., setting them equal to your desired values. Include a legible image
+or pdf of your schematic as part of your report (see below).</p>
+<p>Show your working schematic and simulations to the instructor or
+teaching assistant(s) for checkoff. Required simulations and some hints
+and suggestions for setting them up are described below. PSpice
+simulation profiles have been set up for all needed simulations, however
+you may need to edit the schematic to connect different voltage and
+current sources to support the different simulations.</p>
+<h2 id="sec:opamp">Opamp Characteristics</h2>
+<p>Perform an AC simulation of your opamp circuit model using a separate
+testbench from the linear regulator testbench. Plot the magnitude of the
+opamp transfer function across a wide enough frequency range such that
+you can confirm the low frequency gain, bandwidth (-3dB frequency), and
+gain-bandwidth product. Note that you cannot determine
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>G</mi><mi>m</mi></msub><annotation encoding="application/x-tex">G_{m}</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mi>o</mi></msub><annotation encoding="application/x-tex">R_{o}</annotation></semantics></math>,
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>C</mi><mi>o</mi></msub><annotation encoding="application/x-tex">C_{o}</annotation></semantics></math>
+independently: the maximum gain-bandwidth constraint implies that once
+you’ve chosen two of the three parameters, the other is fully determined
+(assuming you are aiming to maximize the gain-bandwidth product of the
+opamp). Show your plot to the instructor or TA(s) for checkoff and
+include it in your report.</p>
+<h2 id="sec:DCsims">Linear Regulator DC Simulations</h2>
+<p>Use the DC sweep simulation capability in the ADE environment or
+OrCAD PSpice to simulate the DC line regulation, DC load regulation, and
+temperature variation of your regulator. For the purposes of this
+project, define line regulation as
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mfrac><mrow><mi mathvariant="normal">Δ</mi><msub><mi>V</mi><mrow><mi>O</mi><mi>U</mi><mi>T</mi></mrow></msub></mrow><mrow><mi mathvariant="normal">Δ</mi><msub><mi>V</mi><mrow><mi>I</mi><mi>N</mi></mrow></msub></mrow></mfrac><annotation encoding="application/x-tex">\frac{\Delta V_{OUT}}{\Delta V_{IN}}</annotation></semantics></math>,
+load regulation as
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mfrac><mrow><mi mathvariant="normal">Δ</mi><msub><mi>V</mi><mrow><mi>O</mi><mi>U</mi><mi>T</mi></mrow></msub></mrow><mrow><mi mathvariant="normal">Δ</mi><msub><mi>I</mi><mrow><mi>L</mi><mi>D</mi></mrow></msub></mrow></mfrac><annotation encoding="application/x-tex">\frac{\Delta V_{OUT}}{\Delta I_{LD}}</annotation></semantics></math>,
+and the temperature coefficient as
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mfrac><mrow><mi mathvariant="normal">Δ</mi><msub><mi>V</mi><mrow><mi>O</mi><mi>U</mi><mi>T</mi></mrow></msub></mrow><mrow><mi mathvariant="normal">Δ</mi><mi>T</mi></mrow></mfrac><annotation encoding="application/x-tex">\frac{\Delta V_{OUT}}{\Delta T}</annotation></semantics></math>.
+Be sure to choose the limits on
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>V</mi><mrow><mi>I</mi><mi>N</mi></mrow></msub><annotation encoding="application/x-tex">V_{IN}</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>I</mi><mrow><mi>L</mi><mi>D</mi></mrow></msub><annotation encoding="application/x-tex">I_{LD}</annotation></semantics></math>,
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>T</mi><annotation encoding="application/x-tex">T</annotation></semantics></math>
+based on the specifications above. Plot the results of your DC sweep
+simulations for checkoff and for inclusion in your report.</p>
+<h2 id="sec:Transims">Linear Regulator Transient Simulations</h2>
+<p>Use the transient simulation capability in the ADE environment/OrCAD
+PSpice to simulate the response of your regulator to steps on the input
+voltage and the load current.</p>
+<ul>
+<li><p>Line Steps: Assume the magnitude of each step is 100 mV and
+starts at the nominal
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>V</mi><mrow><mi>I</mi><mi>N</mi></mrow></msub><annotation encoding="application/x-tex">V_{IN}</annotation></semantics></math>
+of 1.8 V, i.e. a positive-going step produces
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>V</mi><mrow><mi>I</mi><mi>N</mi></mrow></msub><mo>=</mo><mn>1.9</mn></mrow><annotation encoding="application/x-tex">V_{IN} = 1.9</annotation></semantics></math>
+V and a negative-going step produces
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>V</mi><mrow><mi>I</mi><mi>N</mi></mrow></msub><mo>=</mo><mn>1.7</mn></mrow><annotation encoding="application/x-tex">V_{IN} = 1.7</annotation></semantics></math>
+V. Be sure to test both rising and falling edges for both step
+polarities (i.e., 1.8 V up to 1.9 V, 1.9 V down to 1.8 V, 1.8 V down to
+1.7 V, and 1.7 V up to 1.8 V) at the worst case DC load current for line
+regulation. Assume a 0-100% rise/fall time of 100 ns.</p></li>
+<li><p>Load Steps: Assume the magnitude of a positive-going load step is
+from minimum
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>I</mi><mrow><mi>L</mi><mi>D</mi></mrow></msub><annotation encoding="application/x-tex">I_{LD}</annotation></semantics></math>
+to maximum
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>I</mi><mrow><mi>L</mi><mi>D</mi></mrow></msub><annotation encoding="application/x-tex">I_{LD}</annotation></semantics></math>
+and a negative-going load step is from maximum
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>I</mi><mrow><mi>L</mi><mi>D</mi></mrow></msub><annotation encoding="application/x-tex">I_{LD}</annotation></semantics></math>
+to minimum
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>I</mi><mrow><mi>L</mi><mi>D</mi></mrow></msub><annotation encoding="application/x-tex">I_{LD}</annotation></semantics></math>
+at the worst case
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>V</mi><mrow><mi>I</mi><mi>N</mi></mrow></msub><annotation encoding="application/x-tex">V_{IN}</annotation></semantics></math>
+for load regulation. Assume a 0-100% rise/fall time of 100 ns.</p></li>
+</ul>
+<p>Plot the results of your transient simulations for checkoff and for
+inclusion in your report. At minimum, you must include a plot of the
+regulator output voltage and the opamp output (gate of the NMOS power
+FET) voltage. Define the settling time as the time the transient
+requires to settle within
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>±</mi><mn>5</mn></mrow><annotation encoding="application/x-tex">\pm5</annotation></semantics></math>%
+of the final value.</p>
+<h2 id="sec:ACsims">Linear Regulator AC Simulations</h2>
+<p>Use the AC simulation capability in the ADE environment/OrCAD PSpice
+to simulate the transfer functions
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mfrac><mrow><msub><mi>V</mi><mrow><mi>O</mi><mi>U</mi><mi>T</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mi>s</mi><mo stretchy="false" form="postfix">)</mo></mrow><mrow><msub><mi>V</mi><mrow><mi>R</mi><mi>E</mi><mi>F</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mi>s</mi><mo stretchy="false" form="postfix">)</mo></mrow></mfrac><annotation encoding="application/x-tex">\frac{V_{OUT}(s)}{V_{REF}(s)}</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mfrac><mrow><msub><mi>V</mi><mrow><mi>O</mi><mi>U</mi><mi>T</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mi>s</mi><mo stretchy="false" form="postfix">)</mo></mrow><mrow><msub><mi>V</mi><mrow><mi>I</mi><mi>N</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mi>s</mi><mo stretchy="false" form="postfix">)</mo></mrow></mfrac><annotation encoding="application/x-tex">\frac{V_{OUT}(s)}{V_{IN}(s)}</annotation></semantics></math>,
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mfrac><mrow><msub><mi>V</mi><mrow><mi>O</mi><mi>U</mi><mi>T</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mi>s</mi><mo stretchy="false" form="postfix">)</mo></mrow><mrow><msub><mi>I</mi><mrow><mi>L</mi><mi>D</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mi>s</mi><mo stretchy="false" form="postfix">)</mo></mrow></mfrac><annotation encoding="application/x-tex">\frac{V_{OUT}(s)}{I_{LD}(s)}</annotation></semantics></math>
+assuming the maximum DC load current and nominal
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>V</mi><mrow><mi>I</mi><mi>N</mi></mrow></msub><annotation encoding="application/x-tex">V_{IN}</annotation></semantics></math>.
+Verify that the regulator works according to the specifications in the
+frequency domain. Plot the results of your AC simulations for checkoff
+and for inclusion in your report.</p>
+<h1 id="report">Report</h1>
+<p>Turn in a typewritten report describing your design, your simulation
+testbenches, and the simulated results for the different parameters
+described above. Digital submission via Canvas is required. Include the
+completed summary sheet at the end of this document as the cover page.
+Be sure to include a discussion of why you chose the component values
+and transistor sizes you used (i.e., justify them based on some design
+principle or calculation). Include your schematics for the regulator,
+opamp, and testbenches as well as all simulation plots. Label any
+interesting features or important points on the plots. If your design
+does not meet any specifications, please explain why you think the
+circuit deviates from how you expected it to work. Be concise: only
+include the amount of text necessary to make your point effectively.</p>
+<h1 class="unnumbered" id="hyperlinks">Hyperlinks</h1>
+<ul>
+<li><p>OrCAD PSpice Tutorial:<br />
+<a
+href="https://ucdavis.box.com/s/umur63w6171639cjh6a1mzocqdcahrko">https://ucdavis.box.com/s/umur63w6171639cjh6a1mzocqdcahrko</a></p></li>
+<li><p>Design Project ZIP Archive (DP1.zip):<br />
+<a
+href="https://ucdavis.box.com/s/0teghem870uoc846op07gq3q6o64rkl9">https://ucdavis.box.com/s/0teghem870uoc846op07gq3q6o64rkl9</a></p></li>
+</ul>
+<div class="center">
+<p><strong><span>Project #1 Design Summary</span></strong></p>
+</div>
+<p><span><strong>Name:</strong></span><br />
+<span><strong>Grading:</strong></span></p>
+<div class="center">
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Part</th>
+<th style="text-align: center;">Checkoff</th>
+<th style="text-align: center;">TA Initials</th>
+<th style="text-align: center;">Date</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">Linear Regulator Schematic</td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+</tr>
+<tr>
+<td style="text-align: left;">Opamp Schematic</td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="#sec:opamp"
+data-reference-type="ref" data-reference="sec:opamp">1.2</a> Opamp Open
+Loop Transfer Function Plot</td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="#sec:DCsims"
+data-reference-type="ref" data-reference="sec:DCsims">1.3</a> DC Line
+Regulation Plot</td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="#sec:DCsims"
+data-reference-type="ref" data-reference="sec:DCsims">1.3</a> DC Load
+Regulation Plot</td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="#sec:DCsims"
+data-reference-type="ref"
+data-reference="sec:DCsims">1.3</a> Temperature Plot</td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="#sec:Transims"
+data-reference-type="ref" data-reference="sec:Transims">1.4</a> Line
+Regulation Output Waveform Plot</td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="#sec:Transims"
+data-reference-type="ref" data-reference="sec:Transims">1.4</a> Line
+Regulation Opamp Output Waveform Plot</td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="#sec:Transims"
+data-reference-type="ref" data-reference="sec:Transims">1.4</a> Load
+Regulation Output Waveform Plot</td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="#sec:Transims"
+data-reference-type="ref" data-reference="sec:Transims">1.4</a> Load
+Regulation Opamp Output Waveform Plot</td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="#sec:ACsims"
+data-reference-type="ref"
+data-reference="sec:ACsims">1.5</a> <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>V</mi><mrow><mi>O</mi><mi>U</mi><mi>T</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mi>s</mi><mo stretchy="false" form="postfix">)</mo><mi>/</mi><msub><mi>V</mi><mrow><mi>R</mi><mi>E</mi><mi>F</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mi>s</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">V_{OUT}(s)/V_{REF}(s)</annotation></semantics></math>
+Transfer Function Plot</td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="#sec:ACsims"
+data-reference-type="ref"
+data-reference="sec:ACsims">1.5</a> <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>V</mi><mrow><mi>O</mi><mi>U</mi><mi>T</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mi>s</mi><mo stretchy="false" form="postfix">)</mo><mi>/</mi><msub><mi>V</mi><mrow><mi>I</mi><mi>N</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mi>s</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">V_{OUT}(s)/V_{IN}(s)</annotation></semantics></math>
+Transfer Function Plot</td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="#sec:ACsims"
+data-reference-type="ref"
+data-reference="sec:ACsims">1.5</a> <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>V</mi><mrow><mi>O</mi><mi>U</mi><mi>T</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mi>s</mi><mo stretchy="false" form="postfix">)</mo><mi>/</mi><msub><mi>I</mi><mrow><mi>L</mi><mi>D</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mi>s</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">V_{OUT}(s)/I_{LD}(s)</annotation></semantics></math>
+Transfer Function Plot</td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><span><strong>Op Amp Component Values:</strong></span></p>
+<div class="center">
+<div id="tab:Opamp">
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">Parameter</th>
+<th style="text-align: center;">Designed/Simulated Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td
+style="text-align: center;"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>G</mi><mi>m</mi></msub><annotation encoding="application/x-tex">G_{m}</annotation></semantics></math>
+(S)</td>
+<td style="text-align: center;"></td>
+</tr>
+<tr>
+<td
+style="text-align: center;"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mi>o</mi></msub><annotation encoding="application/x-tex">R_{o}</annotation></semantics></math>
+(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi mathvariant="normal">Ω</mi><annotation encoding="application/x-tex">\Omega</annotation></semantics></math>)</td>
+<td style="text-align: center;"></td>
+</tr>
+<tr>
+<td
+style="text-align: center;"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>C</mi><mi>o</mi></msub><annotation encoding="application/x-tex">C_{o}</annotation></semantics></math>
+(F)</td>
+<td style="text-align: center;"></td>
+</tr>
+<tr>
+<td style="text-align: center;">Low Frequency Gain</td>
+<td style="text-align: center;"></td>
+</tr>
+<tr>
+<td style="text-align: center;">Bandwidth (-3dB Frequency) (Hz)</td>
+<td style="text-align: center;"></td>
+</tr>
+<tr>
+<td style="text-align: center;">GBW</td>
+<td style="text-align: center;"></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><span id="tab:Opamp" data-label="tab:Opamp"></span></p>
+</div>
+<p><span><strong>Linear Regulator Component Values:</strong></span></p>
+<div class="center">
+<div id="tab:LinReg">
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">Parameter</th>
+<th style="text-align: center;">Designed Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;">NMOS Width
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>W</mi><annotation encoding="application/x-tex">W</annotation></semantics></math>
+(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>μ</mi><annotation encoding="application/x-tex">\mu</annotation></semantics></math>m)</td>
+<td style="text-align: center;"></td>
+</tr>
+<tr>
+<td style="text-align: center;">NMOS Length
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>L</mi><annotation encoding="application/x-tex">L</annotation></semantics></math>
+(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>μ</mi><annotation encoding="application/x-tex">\mu</annotation></semantics></math>m)</td>
+<td style="text-align: center;"></td>
+</tr>
+<tr>
+<td style="text-align: center;">Total Transistor Area
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>≤</mo><mn>2000</mn><mspace width="0.222em"></mspace><mi>μ</mi><msup><mtext mathvariant="normal">m</mtext><mn>2</mn></msup></mrow><annotation encoding="application/x-tex">\leq 2000\ \mu\textrm{m}^{2}</annotation></semantics></math></td>
+<td style="text-align: center;"></td>
+</tr>
+<tr>
+<td
+style="text-align: center;"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mn>0</mn></msub><annotation encoding="application/x-tex">R_{0}</annotation></semantics></math>
+(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi mathvariant="normal">Ω</mi><annotation encoding="application/x-tex">\Omega</annotation></semantics></math>)</td>
+<td style="text-align: center;"></td>
+</tr>
+<tr>
+<td
+style="text-align: center;"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mn>1</mn></msub><annotation encoding="application/x-tex">R_{1}</annotation></semantics></math>
+(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi mathvariant="normal">Ω</mi><annotation encoding="application/x-tex">\Omega</annotation></semantics></math>)</td>
+<td style="text-align: center;"></td>
+</tr>
+<tr>
+<td
+style="text-align: center;"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>C</mi><mrow><mi>B</mi><mi>Y</mi><mi>P</mi></mrow></msub><annotation encoding="application/x-tex">C_{BYP}</annotation></semantics></math>
+(F)</td>
+<td style="text-align: center;"></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><span id="tab:LinReg" data-label="tab:LinReg"></span></p>
+</div>
+<p><span><strong>Specifications:</strong></span></p>
+<div class="center">
+<div id="tab:specs">
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">Parameter</th>
+<th style="text-align: center;">Specification</th>
+<th style="text-align: center;">Simulated Value(s)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;">Line Regulation (DC)</td>
+<td
+style="text-align: center;"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>&lt;</mo><mn>20</mn></mrow><annotation encoding="application/x-tex">&lt; 20</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>μ</mi><annotation encoding="application/x-tex">\mu</annotation></semantics></math>V/V</td>
+<td style="text-align: center;"></td>
+</tr>
+<tr>
+<td style="text-align: center;">Line Regulation (transient)</td>
+<td
+style="text-align: center;"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>&lt;</mo><mi>±</mi><mn>2</mn></mrow><annotation encoding="application/x-tex">&lt; \pm2</annotation></semantics></math>
+mV</td>
+<td style="text-align: center;"></td>
+</tr>
+<tr>
+<td style="text-align: center;">Line Step Settling Time</td>
+<td
+style="text-align: center;"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>&lt;</mo><mn>200</mn></mrow><annotation encoding="application/x-tex">&lt; 200</annotation></semantics></math>
+ns</td>
+<td style="text-align: center;"></td>
+</tr>
+<tr>
+<td style="text-align: center;">Power Supply Rejection Ratio (PSRR at
+100 Hz)</td>
+<td
+style="text-align: center;"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>&lt;</mo><mi>−</mi><mn>90</mn></mrow><annotation encoding="application/x-tex">&lt; -90</annotation></semantics></math>
+dB</td>
+<td style="text-align: center;"></td>
+</tr>
+<tr>
+<td style="text-align: center;">Power Supply Rejection Ratio (PSRR at
+100 MHz)</td>
+<td
+style="text-align: center;"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>&lt;</mo><mi>−</mi><mn>10</mn></mrow><annotation encoding="application/x-tex">&lt; -10</annotation></semantics></math>
+dB</td>
+<td style="text-align: center;"></td>
+</tr>
+<tr>
+<td style="text-align: center;">Max Opamp Output Voltage</td>
+<td
+style="text-align: center;"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>≤</mo><msub><mi>V</mi><mrow><mi>I</mi><mi>N</mi></mrow></msub><mo>−</mo><mn>0.1</mn></mrow><annotation encoding="application/x-tex">\leq V_{IN} - 0.1</annotation></semantics></math>
+V</td>
+<td style="text-align: center;"></td>
+</tr>
+<tr>
+<td style="text-align: center;">Min Opamp Output Voltage</td>
+<td
+style="text-align: center;"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>≥</mo><mn>0.1</mn></mrow><annotation encoding="application/x-tex">\geq 0.1</annotation></semantics></math>
+V</td>
+<td style="text-align: center;"></td>
+</tr>
+<tr>
+<td style="text-align: center;">Load Regulation (DC)</td>
+<td
+style="text-align: center;"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>&lt;</mo><mn>20</mn></mrow><annotation encoding="application/x-tex">&lt; 20</annotation></semantics></math>
+mV/A</td>
+<td style="text-align: center;"></td>
+</tr>
+<tr>
+<td style="text-align: center;">Load Regulation (transient)</td>
+<td
+style="text-align: center;"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>&lt;</mo><mi>±</mi><mn>100</mn></mrow><annotation encoding="application/x-tex">&lt; \pm100</annotation></semantics></math>
+mV</td>
+<td style="text-align: center;"></td>
+</tr>
+<tr>
+<td style="text-align: center;">Load Step Settling Time</td>
+<td
+style="text-align: center;"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>&lt;</mo><mn>200</mn></mrow><annotation encoding="application/x-tex">&lt; 200</annotation></semantics></math>
+ns</td>
+<td style="text-align: center;"></td>
+</tr>
+<tr>
+<td style="text-align: center;">Load Rejection Ratio (LRR at 100
+Hz)</td>
+<td
+style="text-align: center;"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>&lt;</mo><mi>−</mi><mn>45</mn></mrow><annotation encoding="application/x-tex">&lt; -45</annotation></semantics></math>
+dB</td>
+<td style="text-align: center;"></td>
+</tr>
+<tr>
+<td style="text-align: center;">Output Voltage Temperature
+Coefficient</td>
+<td
+style="text-align: center;"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>≤</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\leq 1</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>μ</mi><annotation encoding="application/x-tex">\mu</annotation></semantics></math>V/<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi></mi><mo>∘</mo></msup><annotation encoding="application/x-tex">^{\circ}</annotation></semantics></math>C</td>
+<td style="text-align: center;"></td>
+</tr>
+<tr>
+<td style="text-align: center;">Quiescent Current</td>
+<td
+style="text-align: center;"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>I</mi><mi>Q</mi></msub><mo>≤</mo><mn>25</mn></mrow><annotation encoding="application/x-tex">I_{Q} \leq 25</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>μ</mi><annotation encoding="application/x-tex">\mu</annotation></semantics></math>A</td>
+<td style="text-align: center;"></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><span id="tab:specs" data-label="tab:specs"></span></p>
+</div>
+</body>
+</html>
